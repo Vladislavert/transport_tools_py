@@ -1,6 +1,6 @@
-from http import server
 import socket
 import threading
+
 
 class UdpSender:
     def __init__(self):
@@ -16,7 +16,7 @@ class UdpReceiver:
         self.port = port
         self.sock.bind((ip_addr, port))
         self.buffer = buffer
-  
+
     def receive(self):
         # data_raw, addr = self.sock.recvfrom(self.buffer)
         data_raw = self.sock.recv(self.buffer)
@@ -28,8 +28,10 @@ class UdpReceiver:
     def close(self):
         self.sock.close()
 
+
 class TcpServer:
     def __init__(self, port, ip_addr="127.0.0.1", buffer=1024):
+        self.x = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._ip_addr = ip_addr
         self._port = port
@@ -37,13 +39,13 @@ class TcpServer:
         self.conn = None
         self.waiting_for_con = False
         self._stop = False
-        
+
     def start(self, callback) -> None:
         self.x = threading.Thread(target=self.receiver_loop, args=(callback,))
         self.x.start()
         while (not self.waiting_for_con):
             pass
-    
+
     def receiver_loop(self, callback) -> None:
         with self.sock as s:
             s.bind((self._ip_addr, self._port))
@@ -57,19 +59,19 @@ class TcpServer:
                     if not data:
                         break
                     callback(data)
-                    
+
     def stop(self) -> None:
         self._stop = True
-        self.x.join
-                    
+        self.x.join()
+
     def send(self, message) -> None:
         if (self.conn is not None):
             self.conn.sendall(message)
-    
+
     def receive(self):
         data = self.conn.recv(self.buffer)
         return data
-        
+
 
 class TcpClient:
     def __init__(self, port, ip_addr="127.0.0.1", buffer=1024):
@@ -82,18 +84,17 @@ class TcpClient:
             self.sock.connect((self._ip_addr, self._port))
         except socket.error as msg:
             print("Couldnt connect with the socket-server: %s\n terminating program" % msg)
-       
+
     def close(self) -> None:
         self.sock.close()
-        print("close ",self._ip_addr, " ", self._port)
+        print("close ", self._ip_addr, " ", self._port)
 
-        
     def send(self, message) -> None:
         try:
             self.sock.sendall(message)
         except socket.error as msg:
             print("Broken connection, can't send message: %s\n terminating program" % msg)
-    
+
     def receive(self):
         data = self.sock.recv(self.buffer)
         return data
